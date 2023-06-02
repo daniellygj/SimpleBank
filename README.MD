@@ -1,5 +1,5 @@
 A simple bank
-* create and manage account
+* Create and manage account
 Owner, balance, currency
 * Record all balance changes
 Create an account entry for each change
@@ -14,9 +14,9 @@ Perform money transfer between two accounts consistently within a transaction
 #### Download MAKE
 * Execute the command ```make postgres``` to run postgres on docker
 * Execute the command ```make createdb``` to create the database
-* execute the command ```make dropdb``` to drop the database
-* execute the command ```make migrateup``` to run the migration
-* execute the command ```make migrateup``` to run the migration
+* Execute the command ```make dropdb``` to drop the database
+* Execute the command ```make migrateup``` to run the migration
+* Execute the command ```make migratedown``` to undo the migration
 
 ### sqlc: 
 You can install it: https://docs.sqlc.dev/en/latest/overview/install.html

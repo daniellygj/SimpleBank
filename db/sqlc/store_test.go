@@ -28,7 +28,6 @@ func TestStore_TransferTX(t *testing.T) {
 				ToAccountId:   account2.ID,
 				Amount:        amount,
 			})
-
 			// send data to the channels
 			errors <- err
 			results <- result
@@ -47,7 +46,7 @@ func TestStore_TransferTX(t *testing.T) {
 
 		fromEntry := result.FromEntry
 		fromEntryId := account1.ID
-		err = checkEntry(t, fromEntry, fromEntryId, amount, store)
+		err = checkEntry(t, fromEntry, fromEntryId, -amount, store)
 
 		toEntry := result.ToEntry
 		toEntryId := account2.ID
@@ -62,13 +61,12 @@ func TestStore_TransferTX(t *testing.T) {
 func checkEntry(t *testing.T, entry Entry, entryId int64, amount int64, store *Store) error {
 	require.NotEmpty(t, entry)
 	require.Equal(t, entryId, entry.AccountID)
-	require.Equal(t, -amount, entry.Amount)
+	require.Equal(t, amount, entry.Amount)
 	require.NotZero(t, entry.ID)
 	require.NotZero(t, entry.CreatedAt)
 
-	res, err := store.GetEntry(context.Background(), entryId)
+	_, err := store.GetEntry(context.Background(), entryId)
 	require.NoError(t, err)
-	println(res.ID)
 	return err
 }
 
