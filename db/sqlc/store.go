@@ -59,44 +59,62 @@ type TransferTxResult struct {
 }
 
 // TransferTX performs a money transfer from one account to the other
-// It creates a transfer record, add acount entries, and update accounts´balance within a single database transaction
+// It creates a transfer record, add account entries, and update accounts´balance within a single database transaction
 func (store *Store) TransferTX(ctx context.Context, params TransferTxParams) (TransferTxResult, error) {
 	var result TransferTxResult
 
 	err := store.execTx(ctx, func(q *Queries) error {
 		var err error
-		result.Transfer, err = q.CreateTransfer(ctx, CreateTransferParams{
-			FromAccountID: params.FromAccountId,
-			ToAccountID:   params.ToAccountId,
-			Amount:        params.Amount,
-		})
 
+		result.Transfer, err = createNewTransfer(q, ctx, params)
 		if err != nil {
 			return err
 		}
 
-		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
-			AccountID: params.FromAccountId,
-			Amount:    -params.Amount,
-		})
-
+		result.FromEntry, err = createNewEntry(q, ctx, params.FromAccountId, -params.Amount)
 		if err != nil {
 			return err
 		}
 
-		result.ToEntry, err = q.CreateEntry(ctx, CreateEntryParams{
-			AccountID: params.ToAccountId,
-			Amount:    params.Amount,
-		})
-
+		result.ToEntry, err = createNewEntry(q, ctx, params.ToAccountId, params.Amount)
 		if err != nil {
 			return err
 		}
 
-		// TODO: update accounts balance
+		result.FromAccount, err = updateAccountsBalance(q, ctx, params.FromAccountId, -params.Amount)
+		if err != nil {
+			return err
+		}
+
+		result.ToAccount, err = updateAccountsBalance(q, ctx, params.ToAccountId, params.Amount)
+		if err != nil {
+			return err
+		}
 
 		return nil
 	})
 
 	return result, err
+}
+
+func updateAccountsBalance(q *Queries, ctx context.Context, accountId int64, amount int64) (Account, error) {
+	return q.AddAccountBalance(ctx, AddAccountBalanceParams{
+		ID:     accountId,
+		Amount: amount,
+	})
+}
+
+func createNewEntry(q *Queries, ctx context.Context, accountId int64, amount int64) (Entry, error) {
+	return q.CreateEntry(ctx, CreateEntryParams{
+		AccountID: accountId,
+		Amount:    amount,
+	})
+}
+
+func createNewTransfer(q *Queries, ctx context.Context, params TransferTxParams) (Transfer, error) {
+	return q.CreateTransfer(ctx, CreateTransferParams{
+		FromAccountID: params.FromAccountId,
+		ToAccountID:   params.ToAccountId,
+		Amount:        params.Amount,
+	})
 }

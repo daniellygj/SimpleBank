@@ -20,6 +20,7 @@ func TestStore_TransferTX(t *testing.T) {
 	// And allow them to safely share data with each other without explicit locking
 	errors := make(chan error)
 	results := make(chan TransferTxResult)
+	existed := make(map[int]bool)
 
 	for i := 0; i < transactionsQty; i++ {
 		go func() {
@@ -34,9 +35,9 @@ func TestStore_TransferTX(t *testing.T) {
 		}()
 	}
 
+	// check results
 	for i := 0; i < transactionsQty; i++ {
-		// Receive messages from the channel
-		err := <-errors
+		err := <-errors // Receive messages from the channel
 		require.NoError(t, err)
 
 		result := <-results
@@ -52,10 +53,45 @@ func TestStore_TransferTX(t *testing.T) {
 		toEntryId := account2.ID
 		err = checkEntry(t, toEntry, toEntryId, amount, store)
 
-		//	TODO: check accounts balance
+		checkAccounts(t, result, account1, account2, amount, transactionsQty, existed)
 
 	}
 
+	checkUpdatedBalance(t, account1, transactionsQty, amount, account2)
+}
+
+func checkUpdatedBalance(t *testing.T, account1 Account, transactionsQty int, amount int64, account2 Account) {
+	updatedAccount1, err := testQueries.GetAccount(context.Background(), account1.ID)
+	require.NoError(t, err)
+	require.Equal(t, account1.Balance-int64(transactionsQty)*amount, updatedAccount1.Balance)
+
+	updatedAccount2, err := testQueries.GetAccount(context.Background(), account2.ID)
+	require.NoError(t, err)
+	require.Equal(t, account2.Balance+int64(transactionsQty)*amount, updatedAccount2.Balance)
+
+}
+
+func checkAccounts(t *testing.T, result TransferTxResult, account1 Account, account2 Account, amount int64, transactionsQty int, existed map[int]bool) {
+	// Check accounts
+	fromAccount := result.FromAccount
+	require.NotEmpty(t, fromAccount)
+	require.Equal(t, fromAccount.ID, account1.ID)
+
+	toAccount := result.ToAccount
+	require.NotEmpty(t, toAccount)
+	require.Equal(t, toAccount.ID, account2.ID)
+
+	// check accounts balance
+	diffFromAccount := account1.Balance - fromAccount.Balance
+	diffToAccount := toAccount.Balance - account2.Balance
+	require.Equal(t, diffToAccount, diffFromAccount)
+	require.True(t, diffFromAccount > 0)
+	require.True(t, diffFromAccount%amount == 0)
+
+	k := int(diffFromAccount / amount)
+	require.True(t, k >= 1 && k <= transactionsQty)
+	require.NotContains(t, existed, k)
+	existed[k] = true
 }
 
 func checkEntry(t *testing.T, entry Entry, entryId int64, amount int64, store *Store) error {
