@@ -59,44 +59,105 @@ type TransferTxResult struct {
 }
 
 // TransferTX performs a money transfer from one account to the other
-// It creates a transfer record, add acount entries, and update accounts´balance within a single database transaction
-func (store *Store) TransferTX(ctx context.Context, params TransferTxParams) (TransferTxResult, error) {
+// It creates a transfer record, add account entries, and update accounts´balance within a single database transaction
+func (store *Store) TransferTX(
+	ctx context.Context,
+	params TransferTxParams,
+) (TransferTxResult, error) {
 	var result TransferTxResult
 
 	err := store.execTx(ctx, func(q *Queries) error {
 		var err error
-		result.Transfer, err = q.CreateTransfer(ctx, CreateTransferParams{
-			FromAccountID: params.FromAccountId,
-			ToAccountID:   params.ToAccountId,
-			Amount:        params.Amount,
-		})
 
+		result.Transfer, err = createNewTransfer(q, ctx, params)
 		if err != nil {
 			return err
 		}
 
-		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
-			AccountID: params.FromAccountId,
-			Amount:    -params.Amount,
-		})
-
+		result.FromEntry, err = createNewEntry(q, ctx, params.FromAccountId, -params.Amount)
 		if err != nil {
 			return err
 		}
 
-		result.ToEntry, err = q.CreateEntry(ctx, CreateEntryParams{
-			AccountID: params.ToAccountId,
-			Amount:    params.Amount,
-		})
-
+		result.ToEntry, err = createNewEntry(q, ctx, params.ToAccountId, params.Amount)
 		if err != nil {
 			return err
 		}
 
-		// TODO: update accounts balance
+		err2 := updateToAndFromAccountsBalance(q, params, result, err, ctx)
+		if err2 != nil {
+			return err2
+		}
 
 		return nil
 	})
 
 	return result, err
+}
+
+func updateToAndFromAccountsBalance(
+	q *Queries,
+	params TransferTxParams,
+	result TransferTxResult,
+	err error,
+	ctx context.Context,
+) error {
+	if params.FromAccountId < params.ToAccountId {
+		result.FromAccount, result.ToAccount, err = addAmountToAccounts(ctx, q, params.FromAccountId, -params.Amount, params.ToAccountId, params.Amount)
+	} else {
+		result.ToAccount, result.FromAccount, err = addAmountToAccounts(ctx, q, params.ToAccountId, params.Amount, params.FromAccountId, -params.Amount)
+	}
+	return nil
+}
+
+func addAmountToAccounts(
+	ctx context.Context,
+	q *Queries,
+	accountId1 int64,
+	amount1 int64,
+	accountId2 int64,
+	amount2 int64,
+) (account1 Account, account2 Account, err error) {
+	account1, err = updateAccountBalance(q, ctx, accountId1, amount1)
+	if err != nil {
+		return
+	}
+	account2, err = updateAccountBalance(q, ctx, accountId2, amount2)
+	return
+}
+
+func updateAccountBalance(
+	q *Queries,
+	ctx context.Context,
+	accountId int64,
+	amount int64,
+) (Account, error) {
+	return q.AddAccountBalance(ctx, AddAccountBalanceParams{
+		ID:     accountId,
+		Amount: amount,
+	})
+}
+
+func createNewEntry(
+	q *Queries,
+	ctx context.Context,
+	accountId int64,
+	amount int64,
+) (Entry, error) {
+	return q.CreateEntry(ctx, CreateEntryParams{
+		AccountID: accountId,
+		Amount:    amount,
+	})
+}
+
+func createNewTransfer(
+	q *Queries,
+	ctx context.Context,
+	params TransferTxParams,
+) (Transfer, error) {
+	return q.CreateTransfer(ctx, CreateTransferParams{
+		FromAccountID: params.FromAccountId,
+		ToAccountID:   params.ToAccountId,
+		Amount:        params.Amount,
+	})
 }

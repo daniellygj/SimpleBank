@@ -14,10 +14,10 @@ migratedown:
 	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable" -verbose down
 
 sqlc-windows:
-	docker run --rm -v "$(Get-Location):/src" -w /src kjconroy/sqlc generate
+	docker run --rm -v "$$(Get-Location):/src" -w /src kjconroy/sqlc generate
 
 sqlc-mac:
-	docker run --rm -v "$(pwd):/src" -w /src kjconroy/sqlc generate
+	docker run --rm -v "$$(pwd):/src" -w /src kjconroy/sqlc generate
 
 test:
 	go test -v -cover ./...
