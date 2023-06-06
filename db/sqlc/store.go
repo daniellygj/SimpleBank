@@ -84,7 +84,7 @@ func (store *Store) TransferTX(
 			return err
 		}
 
-		err2 := updateToAndFromAccountsBalance(q, params, result, err, ctx)
+		err2 := updateToAndFromAccountsBalance(q, params, &result, ctx)
 		if err2 != nil {
 			return err2
 		}
@@ -98,16 +98,15 @@ func (store *Store) TransferTX(
 func updateToAndFromAccountsBalance(
 	q *Queries,
 	params TransferTxParams,
-	result TransferTxResult,
-	err error,
+	result *TransferTxResult,
 	ctx context.Context,
-) error {
+) (err error) {
 	if params.FromAccountId < params.ToAccountId {
 		result.FromAccount, result.ToAccount, err = addAmountToAccounts(ctx, q, params.FromAccountId, -params.Amount, params.ToAccountId, params.Amount)
 	} else {
 		result.ToAccount, result.FromAccount, err = addAmountToAccounts(ctx, q, params.ToAccountId, params.Amount, params.FromAccountId, -params.Amount)
 	}
-	return nil
+	return err
 }
 
 func addAmountToAccounts(

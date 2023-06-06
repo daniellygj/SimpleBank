@@ -58,7 +58,7 @@ func TestStore_TransferTX(t *testing.T) {
 
 	}
 
-	checkUpdatedBalance(t, account1, account2, -int64(transactionsQty)*amount)
+	checkUpdatedBalance(t, account1, account2, int64(transactionsQty)*amount)
 }
 
 func TestStore_TransferTXDeadLock(t *testing.T) {
@@ -111,7 +111,7 @@ func checkUpdatedBalance(t *testing.T, account1 Account, account2 Account, expec
 
 	updatedAccount2, err := testQueries.GetAccount(context.Background(), account2.ID)
 	require.NoError(t, err)
-	require.Equal(t, account2.Balance-expectedBalanceChange, updatedAccount2.Balance)
+	require.Equal(t, account2.Balance+expectedBalanceChange, updatedAccount2.Balance)
 }
 
 func checkAccounts(t *testing.T, result TransferTxResult, account1 Account, account2 Account, amount int64, transactionsQty int, existed map[int]bool) {
