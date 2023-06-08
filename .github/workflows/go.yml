@@ -45,6 +45,9 @@ jobs:
         sudo mv migrate /usr/bin/migrate
         which migrate
 
+    - name: Download dependencies
+      run: go mod download
+
     - name: run migrations
       run: make migrateup
 
