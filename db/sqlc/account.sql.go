@@ -66,9 +66,6 @@ func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (A
 		fmt.Printf("Scan failed with error: %v\n", err)
 	}
 
-	fmt.Printf("\nCreateAccount i: balance: %v, createdAt: %v, currency: %v, owner: %v", i.Balance, i.CreatedAt, i.Currency, i.Owner)
-	fmt.Printf("\nCreateAccount arg: balance: %v, currency: %v, owner: %v", arg.Balance, arg.Currency, arg.Owner)
-
 	return i, err
 }
 

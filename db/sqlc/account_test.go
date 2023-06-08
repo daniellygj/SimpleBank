@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"github.com/stretchr/testify/require"
 	"simple_bank/util"
 	"testing"
@@ -18,8 +17,6 @@ func createRandomAccount(t *testing.T) Account {
 	}
 
 	account, err := testQueries.CreateAccount(context.Background(), arg)
-	fmt.Printf("\naccound balance: balance: %v, createdAt: %v, currency: %v, owner: %v", account.Balance, account.CreatedAt, account.Currency, account.Owner)
-	fmt.Printf("\nCreateAccountParams: balance: %v, currency: %v, owner: %v", arg.Balance, arg.Currency, arg.Owner)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, account)

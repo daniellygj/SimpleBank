@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -117,7 +116,6 @@ func checkUpdatedBalance(t *testing.T, account1 Account, account2 Account, expec
 func checkAccounts(t *testing.T, result TransferTxResult, account1 Account, account2 Account, amount int64, transactionsQty int, existed map[int]bool) {
 	// Check accounts
 	fromAccount := result.FromAccount
-	fmt.Printf("\nfromAccount balance: %v, createdAt: %v, currency: %v, owner: %v", result.FromAccount.Balance, result.FromAccount.CreatedAt, result.FromAccount.Currency, result.FromAccount.Owner)
 	require.NotEmpty(t, fromAccount)
 	require.Equal(t, fromAccount.ID, account1.ID)
 
